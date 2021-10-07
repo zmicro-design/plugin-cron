@@ -46,14 +46,14 @@ create() {
   # @TODO inquirer_text cannot input * symbol, so use _ instead of *
   inquirer_text "service schedule(crontab.guru, use _ instead of *):" service_schedule "" "service schedule is required" required
   # @TODO
-  service_schedule=$(echo $service_schedule | sed -e "s%_%*%g")
+  local service_schedule_for_see=$(echo $service_schedule | sed -e "s%_%*%g")
 
   log_info ""
   log_info "create service ..."
   log_info "#################################"
   log_info "service_name: $service_name"
   log_info "service_command: $service_command"
-  log_info "service_schedule: $service_schedule"
+  log_info "service_schedule: $service_schedule_for_see"
   log_info "#################################"
 
   local yesno=('Yes' 'No')

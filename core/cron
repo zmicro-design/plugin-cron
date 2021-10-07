@@ -188,11 +188,17 @@ cron_enable() {
     return
   fi
 
-  sudo crontab -l | grep $service_enabled_path >>/dev/null 2>&1
+  # @TODO why set +e
+  set +e
+  sudo crontab -l >>/dev/null 2>&1
   if [ "$?" = "0" ]; then
-    log_error "cron service($name) has been enabled before (2)"
-    return
+    sudo crontab -l | grep $service_enabled_path >>/dev/null 2>&1
+    if [ "$?" = "0" ]; then
+      log_error "cron service($name) has been enabled before (2)"
+      return
+    fi
   fi
+  set -e
 
   local service_path=$(cron_get_service_path $name)
   local service_log_path=$(cron_get_service_log_path $name)
@@ -301,7 +307,8 @@ EOF
   sudo chmod +x $service_path
 
   # auto enable
-  cron_enable $name "$schedule"
+  # echo "cron_enable $name $schedule"
+  cron_enable $name $schedule
 
   log_success "cron service ${name} created"
 }
