@@ -1,0 +1,16 @@
+#!/bin/bash
+
+help() {
+  echo "Usage:"
+  echo "  zcron <action> [options...] [service]"
+  echo ""
+  echo "  Actions:"
+  echo "    create    Create a new cron service"
+  echo "    remove    Remove a new cron service"
+  echo "    status    Status cron service"
+  echo "    logs      Get cron service logs"
+  echo "    enable    Enable cron service when system start up"
+  echo "    disable   Disable cron service when system start up"
+}
+
+help

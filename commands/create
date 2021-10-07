@@ -1,0 +1,107 @@
+#!/bin/bash
+
+load inquirer
+
+required() {
+  if [ "$1" = "" ]; then
+    echo false
+  else
+    echo true
+  fi
+}
+
+create() {
+  local service_name=""
+  local service_command=""
+  local service_schedule=""
+  local is_cron_force_recreate=false
+
+  while [[ $# -gt 0 ]]; do
+    local key=$1
+    local value=$2
+    case $key in
+    -f | --force-recreate)
+      set_var is_cron_force_recreate true
+      shift
+      ;;
+    *)
+      if [ "$(string_match $key ^-)" = "true" ]; then
+        echo "[cron][create]: unknown parameter \"$key\""
+        help
+        exit 1
+      fi
+
+      service_name=$key
+      shift
+      ;;
+    esac
+  done
+
+  if [ "$service_name" = "" ]; then
+    inquirer_text "cron service name:" service_name "" "service name is required" required
+  fi
+
+  inquirer_text "service command:" service_command "" "service command is required" required
+
+  # @TODO inquirer_text cannot input * symbol, so use _ instead of *
+  inquirer_text "service schedule(crontab.guru, use _ instead of *):" service_schedule "" "service schedule is required" required
+  # @TODO
+  service_schedule=$(echo $service_schedule | sed -e "s%_%*%g")
+
+  log_info ""
+  log_info "create service ..."
+  log_info "#################################"
+  log_info "service_name: $service_name"
+  log_info "service_command: $service_command"
+  log_info "service_schedule: $service_schedule"
+  log_info "#################################"
+
+  local yesno=('Yes' 'No')
+  inquirer_select "is it ok ?" yesno answer
+  if [ "$answer" != "Yes" ]; then
+    exit 0
+  fi
+
+  if [ "$is_cron_force_recreate" = "false" ]; then
+    if [ "$(cron_has_service $service_name)" = "true" ]; then
+      local yesno=('Yes' 'No')
+      inquirer_select "override ?" yesno answer
+      if [ "$answer" != "Yes" ]; then
+        exit 0
+      fi
+
+      is_cron_force_recreate=true
+    fi
+  fi
+
+  if [ "$is_cron_force_recreate" = "true" ]; then
+    cron_remove $service_name
+  fi
+
+  cron_create $service_name "$service_schedule" "$service_command"
+}
+
+help() {
+  echo "Create a cron service"
+  echo ""
+  echo "Usage:"
+  echo "  zcron create [options] [app_name]"
+  echo ""
+  echo "Options:"
+  echo "  -f, --force-recreate  Force recreate service"
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  create $@
+}
+
+run() {
+  core $@
+}
+
+run $@

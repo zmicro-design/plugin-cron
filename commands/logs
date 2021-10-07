@@ -1,0 +1,56 @@
+#!/bin/bash
+
+help() {
+  echo "Get a cron service logs"
+  echo ""
+  echo "Usage:"
+  echo "  zcron logs [options] [app_name]"
+  echo ""
+  echo "Options:"
+  echo "  -f, --follow  Follow logs"
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  local service_name=""
+  local args=""
+
+  while [[ $# -gt 0 ]]; do
+    local key=$1
+    local value=$2
+    case $key in
+    -f | --follow)
+      # set_var is_daemon_force_recreate true
+      args="$args -f"
+      shift
+      ;;
+    *)
+      if [ "$(string_match $key ^-)" = "true" ]; then
+        echo "[cron][logs]: unknown parameter \"$key\""
+        help
+        exit 1
+      fi
+
+      service_name=$key
+      shift
+      ;;
+    esac
+  done
+
+  if [ -z "$service_name" ]; then
+    log_error "service name is required, use --help to get help"
+    exit 1
+  fi
+
+  cron_logs $service_name $args
+}
+
+run() {
+  core $@
+}
+
+run $@

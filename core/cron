@@ -1,0 +1,369 @@
+#!/bin/bash
+
+export CRON_SERVICE_DIR=$ZMICRO_HOME/plugins/cron/.run
+export CRON_SERVICE_ENABLED_DIR=$CRON_SERVICE_DIR/enabled
+export CRON_SERVICE_LOG_DIR=/var/log/zmicro/cron
+export CRON_SERVICE_CRONTAB_TMP=/tmp/cron.zmicro
+
+if [ ! -d "$CRON_SERVICE_ENABLED_DIR" ]; then
+  sudo mkdir -p $CRON_SERVICE_ENABLED_DIR
+fi
+
+if [ ! -d "$CRON_SERVICE_LOG_DIR" ]; then
+  sudo mkdir -p $CRON_SERVICE_LOG_DIR
+fi
+
+if [ ! -w "$CRON_SERVICE_LOG_DIR" ]; then
+  sudo chown -R $USER $CRON_SERVICE_LOG_DIR
+fi
+
+cron_get_service_name() {
+  local name=$1
+  echo $name
+}
+
+cron_parse_service_name() {
+  local service_name=$1
+  if [ "$service_name" = "" ]; then
+    log_error "[cron_parse_service_name] service_name is required"
+    exit 1
+  fi
+
+  echo $service_name
+}
+
+cron_get_service_path() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service=$(cron_get_service_name $1)
+  echo "$CRON_SERVICE_DIR/${service}"
+}
+
+cron_get_service_enabled_path() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service=$(cron_get_service_name $1)
+  echo "$CRON_SERVICE_ENABLED_DIR/${service}"
+}
+
+cron_get_service_log_path() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service=$(cron_get_service_name $1)
+  echo "$CRON_SERVICE_LOG_DIR/${service}"
+}
+
+cron_is_service_exist() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "[cron_is_service_exist] name is required"
+    exit 1
+  fi
+
+  local service_path=$(cron_get_service_path $name)
+  if [ ! -f $service_path ]; then
+    echo "false"
+  else
+    echo "true"
+  fi
+}
+
+cron_is_service_enabled() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "[cron_is_service_exist] name is required"
+    exit 1
+  fi
+
+  local service_enabled_path="$CRON_SERVICE_ENABLED_DIR/$name"
+  if [ ! -f $service_enabled_path ]; then
+    echo "false"
+  else
+    echo "true"
+  fi
+}
+
+cron_has_service() {
+  cron_is_service_exist $@
+}
+
+cron_logs() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service_name=$(cron_get_service_name $1)
+  if [ "$(cron_is_service_exist $1)" = "false" ]; then
+    log_error "cron service($1) not found"
+    exit 1
+  fi
+
+  while [[ $# -gt 0 ]]; do
+    local key=$1
+    local value=$2
+    case $key in
+    -f | --follow)
+      set_var is_cron_logs_follow true
+      shift
+      ;;
+    *)
+      if [ "$(string_match $key ^-)" = "true" ]; then
+        log_error "[cron_logs] unknown parameter \"$key\""
+        exit 1
+      fi
+
+      shift
+      ;;
+    esac
+  done
+
+  local service_log_path=$(cron_get_service_log_path $name)
+  if [ "$is_cron_logs_follow" = "true" ]; then
+    sudo tail -f $service_log_path
+  else
+    sudo cat $service_log_path
+  fi
+}
+
+cron_status() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service=$(cron_get_service_name $1)
+  if [ "$(cron_is_service_exist $1)" = "false" ]; then
+    log_error "cron service($1) not found"
+    exit 1
+  fi
+
+  if [ "$(cron_is_service_enabled $name)" = "true" ]; then
+    echo "running"
+  else
+    echo "none"
+  fi
+}
+
+cron_enable() {
+  local name=$1
+  local schedule_pattern=${@:2}
+
+  # @TODO replace _ => *
+  schedule_pattern=$(echo "$schedule_pattern" | sed -e "s%_%*%g")
+
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  if [ "$schedule_pattern" = "" ]; then
+    log_error "schedule_pattern is required, such as 00 09 * * 1-5"
+    exit 1
+  fi
+
+  local service=$(cron_get_service_name $name)
+  if [ "$(cron_is_service_exist $name)" = "false" ]; then
+    log_error "cron service($name) not found"
+    exit 1
+  fi
+
+  local service_enabled_path=$(cron_get_service_enabled_path $name)
+  if [ -f "$service_enabled_path" ]; then
+    log_error "cron service($name) has been enabled before"
+    return
+  fi
+
+  sudo crontab -l | grep $service_enabled_path >>/dev/null 2>&1
+  if [ "$?" = "0" ]; then
+    log_error "cron service($name) has been enabled before (2)"
+    return
+  fi
+
+  local service_path=$(cron_get_service_path $name)
+  local service_log_path=$(cron_get_service_log_path $name)
+
+  # link to enable
+  sudo ln -s $service_path $service_enabled_path
+
+  # add to crontab
+  sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+  sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+  echo "${schedule_pattern} $service_enabled_path >> $service_log_path 2>&1" >>$CRON_SERVICE_CRONTAB_TMP
+  sudo crontab $CRON_SERVICE_CRONTAB_TMP
+  sudo rm $CRON_SERVICE_CRONTAB_TMP
+
+  echo "[enabled][$USER] $(date)" >>$service_log_path
+
+  log_success "[cron_enable] cron service($name) enabled"
+}
+
+cron_disable() {
+  local name=$1
+  if [ "$name" = "" ]; then
+    log_error "name is required"
+    exit 1
+  fi
+
+  local service_name=$(cron_get_service_name $name)
+  local service_enabled_path=$(cron_get_service_enabled_path $name)
+  local service_log_path=$(cron_get_service_log_path $name)
+  if [ "$(cron_is_service_exist $name)" = "false" ]; then
+    log_error "cron service($name) not found"
+    exit 1
+  fi
+
+  if [ ! -f "$service_enabled_path" ]; then
+    log_info "cron service($name) is not enabled"
+    return
+  fi
+
+  # remove crontab
+  sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+  sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+
+  # sed -i -e "s%.*${service_enabled_path}.*%%g" $CRON_SERVICE_CRONTAB_TMP
+  os_fs_remove_line_has_str $CRON_SERVICE_CRONTAB_TMP $service_enabled_path
+
+  # remove empty line
+  #   reference: https://stackoverflow.com/questions/10347653/awk-remove-blank-lines
+  # awk NF $CRON_SERVICE_CRONTAB_TMP >$CRON_SERVICE_CRONTAB_TMP
+  os_fs_remove_empty_line $CRON_SERVICE_CRONTAB_TMP
+
+  sudo crontab $CRON_SERVICE_CRONTAB_TMP
+  sudo rm $CRON_SERVICE_CRONTAB_TMP
+
+  sudo unlink $service_enabled_path >>/dev/null
+
+  echo "[disabled][$USER] $(date)" >>$service_log_path
+}
+
+cron_create() {
+  local name=$1
+  local schedule=$2
+  local command=$3
+
+  # echo "xxx:name: $name"
+  # echo "xxx:schedule: $schedule"
+  # echo "xxx:command: $command"
+
+  if [ "$name" = "" ]; then
+    log_error "cron name is required"
+    exit 1
+  fi
+
+  if [ "$schedule" = "" ]; then
+    log_error "cron schedule is required"
+    exit 1
+  fi
+
+  if [ "$command" = "" ]; then
+    log_error "cron command is required"
+    exit 1
+  fi
+
+  # create script dir
+  if [ ! -d $CRON_SERVICE_ENABLED_DIR ]; then
+    sudo mkdir -p $CRON_SERVICE_ENABLED_DIR
+  fi
+
+  if [ "$(cron_is_service_exist $name)" = "true" ]; then
+    local service_path=$(cron_get_service_path $name)
+    log_error "found cron service(${name}), please it manual: ${service_path}"
+    exit 1
+  fi
+
+  local service_name=$(cron_get_service_name $name)
+  local service_path=$(cron_get_service_path $name)
+  sudo touch $service_path
+
+  # create script
+  sudo tee $service_path >>/dev/null <<EOF
+#!/bin/bash
+export PATH=/usr/local/lib/zmicro/bin:\$PATH
+
+${command}
+EOF
+  sudo chmod +x $service_path
+
+  # auto enable
+  cron_enable $name "$schedule"
+
+  log_success "cron service ${name} created"
+}
+
+cron_remove() {
+  local name=$1
+
+  if [ "$name" = "" ]; then
+    log_error "cron service and command are required"
+    exit 1
+  fi
+
+  local service_name=$(cron_get_service_name $name)
+  local service_path=$(cron_get_service_path $name)
+  if [ "$(cron_is_service_exist $name)" = "false" ]; then
+    log_error "cron service(${name}) not found"
+    exit 1
+  fi
+
+  # disable before move
+  cron_disable $service_name
+
+  sudo rm $service_path
+
+  log_success "cron service ${name} removed"
+}
+
+cron_list() {
+  local service_files=$(ls $CRON_SERVICE_ENABLED_DIR)
+
+  parser() {
+    local index=$1
+    local file_name=$2
+    local service_name=$(cron_parse_service_name $file_name)
+    echo $service_name
+  }
+
+  array_each parser $service_files
+}
+
+cron_count() {
+  local services=$(cron_list $@)
+
+  array_length $services
+}
+
+export -f cron_get_service_name
+export -f cron_parse_service_name
+export -f cron_get_service_path
+export -f cron_get_service_enabled_path
+export -f cron_get_service_log_path
+export -f cron_is_service_exist
+export -f cron_is_service_enabled
+export -f cron_has_service
+
+export -f cron_logs
+export -f cron_status
+export -f cron_enable
+export -f cron_disable
+
+export -f cron_create
+export -f cron_remove
+
+export -f cron_list
+export -f cron_count

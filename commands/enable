@@ -1,0 +1,41 @@
+#!/bin/bash
+
+help() {
+  echo "Enable a cron service"
+  echo ""
+  echo "Usage:"
+  echo "  zcron enable [options] [app_name]"
+  echo ""
+  echo "Notice:"
+  echo "  Use _ instead of * for schedule pattern (bug)"
+  echo ""
+  echo "Example:"
+  echo "    # Run my_cron_service_name every minutes"
+  echo "    zcron enable my_cron_service_name _/1 _ _ _ _"
+  echo ""
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  local service_name=$1
+  local service_schedule=${@:2}
+
+  if [ -z "$service_name" ] || [ -z "$service_schedule" ]; then
+    log_error "service name and schedule is required, use --help to get help"
+    exit 1
+  fi
+
+  # cron_enable $@
+  # echo "fuck: $service_name $service_schedule"
+  cron_enable $service_name "$service_schedule"
+}
+
+run() {
+  core $@
+}
+
+run $@

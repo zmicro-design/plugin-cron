@@ -1,0 +1,44 @@
+#!/bin/bash
+
+help() {
+  echo "List all cron services"
+  echo ""
+  echo "Usage:"
+  echo "  zcron list [options]"
+  # echo ""
+  # echo "Options:"
+  # echo "  -f, --follow  Follow logs"
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  local services=$(cron_list $@)
+
+  print() {
+    local index=$1
+    local service_name=$2
+
+    log "    $index $(color_success "$service_name")"
+  }
+
+  local services_count=$(cron_count)
+  if [ $services_count -eq 0 ]; then
+    log "    (no avaliable services)"
+    exit 0
+  fi
+
+  log "cron services: $services_count"
+  log ""
+
+  array_each print $services
+}
+
+run() {
+  core $@
+}
+
+run $@
