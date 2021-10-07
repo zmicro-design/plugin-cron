@@ -1,13 +1,14 @@
 #!/bin/bash
 
 help() {
-  echo "List all cron services"
+  echo "List cron services"
+  echo "  default only enabled service"
   echo ""
   echo "Usage:"
   echo "  zcron list [options]"
-  # echo ""
-  # echo "Options:"
-  # echo "  -f, --follow  Follow logs"
+  echo ""
+  echo "Options:"
+  echo "  -a, --all  Get all cron service, include not enabled"
 }
 
 core() {
@@ -16,7 +17,12 @@ core() {
     exit 0
   fi
 
-  local services=$(cron_list $@)
+  local is_list_all="false"
+  if [ "$1" = "-a" ] || [ "$1" = "--all" ]; then
+    is_list_all=true
+  fi
+
+  local services=$(cron_list $is_list_all)
 
   print() {
     local index=$1
@@ -25,13 +31,24 @@ core() {
     log "    $index $(color_success "$service_name")"
   }
 
-  local services_count=$(cron_count)
-  if [ $services_count -eq 0 ]; then
-    log "    (no avaliable services)"
-    exit 0
+  local services_count=$(cron_count $is_list_all)
+
+  if [ "$is_list_all" = "true" ]; then
+    if [ $services_count -eq 0 ]; then
+      log "    (no avaliable services)(all)"
+      exit 0
+    fi
+
+    log "cron services(all): $services_count"
+  else
+    if [ $services_count -eq 0 ]; then
+      log "    (no avaliable services)(enabled)"
+      exit 0
+    fi
+
+    log "cron services(enabled): $services_count"
   fi
 
-  log "cron services: $services_count"
   log ""
 
   array_each print $services

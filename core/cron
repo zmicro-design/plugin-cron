@@ -337,12 +337,27 @@ cron_remove() {
 }
 
 cron_list() {
-  local service_files=$(ls $CRON_SERVICE_ENABLED_DIR)
+  local is_list_all=$1
+
+  # echo "is_list_all: $is_list_all"
+
+  local service_files=""
+  if [ "$is_list_all" = "true" ]; then
+    service_files=$(ls $CRON_SERVICE_DIR)
+  else
+    service_files=$(ls $CRON_SERVICE_ENABLED_DIR)
+  fi
 
   parser() {
     local index=$1
     local file_name=$2
     local service_name=$(cron_parse_service_name $file_name)
+
+    # ignore enabled dir
+    if [ "$service_name" = "enabled" ]; then
+      continue
+    fi
+
     echo $service_name
   }
 
