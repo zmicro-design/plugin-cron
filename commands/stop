@@ -1,0 +1,15 @@
+#!/bin/bash
+
+help() {
+  zcron disable --help
+}
+
+core() {
+  zcron disable $@
+}
+
+run() {
+  core $@
+}
+
+run $@
