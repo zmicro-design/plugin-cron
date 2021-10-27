@@ -11,40 +11,71 @@ required() {
 }
 
 create() {
-  local service_name=""
-  local service_command=""
-  local service_schedule=""
+  local service_name=$1
+  local service_schedule=${@:2:5}
+  local service_command=${@:7}
+  local is_quiet=false
   local is_cron_force_recreate=false
 
-  while [[ $# -gt 0 ]]; do
-    local key=$1
-    local value=$2
-    case $key in
-    -f | --force-recreate)
-      os::set_var is_cron_force_recreate true
-      shift
-      ;;
-    *)
-      if [ "$(string::match $key ^-)" = "true" ]; then
-        echo "[cron][create]: unknown parameter \"$key\""
-        help
-        exit 1
-      fi
+  if [ -n "$service_name" ] && [ -n "$service_schedule" ] && [ "$(array::length $service_schedule)" -eq "5" ] && [ -n "$service_command" ]; then
+    is_quiet=true
+  fi
 
-      service_name=$key
-      shift
-      ;;
-    esac
-  done
+  # while [[ $# -gt 0 ]]; do
+  #   local key=$1
+  #   local value=$2
+  #   case $key in
+  #   -f | --force-recreate)
+  #     os::set_var is_cron_force_recreate true
+  #     shift
+  #     ;;
+  #   -n | --name)
+  #     service_name=$value
+  #     shift
+  #     shift
+  #     ;;
+  #   -s | --schedule)
+  #     service_schedule=$value
+  #     shift
+  #     shift
+  #     ;;
+  #   -c | --command)
+  #     service_command=$value
+  #     shift
+  #     shift
+  #     ;;
+  #   *)
+  #     if [ "$(string::match $key ^-)" = "true" ]; then
+  #       echo "[cron][create]: unknown parameter \"$key\""
+  #       help
+  #       exit 1
+  #     fi
+
+  #     # service_name=$key
+  #     shift
+  #     ;;
+  #   esac
+  # done
+
+  # echo "service_name: $service_name"
+  # echo "service_command: $service_command"
+  # echo "service_schedule: $service_schedule"
+  # echo "is_cron_force_recreate: $is_cron_force_recreate"
+  # exit 0
 
   if [ "$service_name" = "" ]; then
     inquirer::text "cron service name:" service_name "" "service name is required" required
   fi
 
-  inquirer::text "service command:" service_command "" "service command is required" required
+  if [ -z "$service_command" ]; then
+    inquirer::text "service command:" service_command "" "service command is required" required
+  fi
 
   # @TODO inquirer::text cannot input * symbol, so use _ instead of *
-  inquirer::text "service schedule(crontab.guru, use _ instead of *):" service_schedule "" "service schedule is required" required
+  if [ -z "$service_schedule" ]; then
+    inquirer::text "service schedule(crontab.guru, use _ instead of *):" service_schedule "" "service schedule is required" required
+  fi
+
   # @TODO
   local service_schedule_for_see=$(echo $service_schedule | sed -e "s%_%*%g")
 
@@ -56,26 +87,32 @@ create() {
   log::info "service_schedule: $service_schedule_for_see"
   log::info "#################################"
 
-  local yesno=('Yes' 'No')
-  inquirer::select "is it ok ?" yesno answer
-  if [ "$answer" != "Yes" ]; then
-    exit 0
-  fi
-
-  if [ "$is_cron_force_recreate" = "false" ]; then
-    if [ "$(cron_has_service $service_name)" = "true" ]; then
-      local yesno=('Yes' 'No')
-      inquirer::select "override ?" yesno answer
-      if [ "$answer" != "Yes" ]; then
-        exit 0
-      fi
-
-      is_cron_force_recreate=true
+  if [ "$is_quiet" = "false" ]; then
+    local yesno=('Yes' 'No')
+    inquirer::select "is it ok ?" yesno answer
+    if [ "$answer" != "Yes" ]; then
+      exit 0
     fi
-  fi
 
-  if [ "$is_cron_force_recreate" = "true" ]; then
-    cron_remove $service_name
+    if [ "$is_cron_force_recreate" = "false" ]; then
+      if [ "$(cron_has_service $service_name)" = "true" ]; then
+        local yesno=('Yes' 'No')
+        inquirer::select "override ?" yesno answer
+        if [ "$answer" != "Yes" ]; then
+          exit 0
+        fi
+
+        is_cron_force_recreate=true
+      fi
+    fi
+
+    if [ "$is_cron_force_recreate" = "true" ]; then
+      cron_remove $service_name
+    fi
+  else
+    if [ "$(cron_is_service_exist $service_name)" = "true" ]; then
+      cron_remove $service_name
+    fi
   fi
 
   cron_create $service_name "$service_schedule" "$service_command"
@@ -85,7 +122,7 @@ help() {
   echo "Create a cron service"
   echo ""
   echo "Usage:"
-  echo "  zcron create [options] [app_name]"
+  echo "  zcron create [options] [name] [command] [schedule]"
   echo ""
   echo "Options:"
   echo "  -f, --force-recreate  Force recreate service"
