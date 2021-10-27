@@ -1,0 +1,33 @@
+#!/bin/bash
+
+help() {
+  echo "Disable a cron service"
+  echo ""
+  echo "Usage:"
+  echo "  zcron disable [options] [app_name]"
+  # echo ""
+  # echo "Options:"
+  # echo "  -f, --follow  Follow logs"
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  local name=$1
+
+  if [ -z "$name" ]; then
+    log::error "service name is required, use --help to get help"
+    exit 1
+  fi
+
+  cron_is_service_exist $name
+}
+
+run() {
+  core $@
+}
+
+run $@
