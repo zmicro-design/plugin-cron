@@ -16,7 +16,7 @@ core() {
   local service_name=$1
 
   if [ -z "$service_name" ]; then
-    log_error "service name is required, use --help to get help"
+    log::error "service name is required, use --help to get help"
     exit 1
   fi
 

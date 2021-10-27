@@ -25,12 +25,12 @@ core() {
   local service_schedule=${@:2}
 
   if [ -z "$service_name" ]; then
-    log_error "service name is required, use --help to get help"
+    log::error "service name is required, use --help to get help"
     exit 1
   fi
 
    if [ -z "$service_schedule" ]; then
-    log_error "service schedule is required, use --help to get help"
+    log::error "service schedule is required, use --help to get help"
     exit 1
   fi
 

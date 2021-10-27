@@ -28,7 +28,7 @@ core() {
     local index=$1
     local service_name=$2
 
-    log "    $index $(color_success "$service_name")"
+    log "    $index $(color::success "$service_name")"
   }
 
   local services_count=$(cron_count $is_list_all)
@@ -51,7 +51,7 @@ core() {
 
   log ""
 
-  array_each print $services
+  array::each print $services
 }
 
 run() {

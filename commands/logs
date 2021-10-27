@@ -24,12 +24,12 @@ core() {
     local value=$2
     case $key in
     -f | --follow)
-      # set_var is_daemon_force_recreate true
+      # os::set_var is_daemon_force_recreate true
       args="$args -f"
       shift
       ;;
     *)
-      if [ "$(string_match $key ^-)" = "true" ]; then
+      if [ "$(string::match $key ^-)" = "true" ]; then
         echo "[cron][logs]: unknown parameter \"$key\""
         help
         exit 1
@@ -42,7 +42,7 @@ core() {
   done
 
   if [ -z "$service_name" ]; then
-    log_error "service name is required, use --help to get help"
+    log::error "service name is required, use --help to get help"
     exit 1
   fi
 
