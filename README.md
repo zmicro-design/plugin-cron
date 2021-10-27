@@ -30,9 +30,9 @@ $ zcron status date
 
 ```bash
 # echo date at every minute
-$ zmicro plugin run cron create echo_date _/1 _ _ _ _ date +%D\ %H:%M:%S
+$ zmicro cron create echo_date _/1 _ _ _ _ date +%D\ %H:%M:%S
 
 # update at 10:00 on every day-of-month
-$ zmicro plugin run cron create zmicro_auto_update 0 10 _/1 _ _ zmicro update -a
+$ zmicro cron create zmicro_auto_update 0 10 _/1 _ _ zmicro update -a
 ```
 
