@@ -60,7 +60,7 @@ create() {
   # echo "service_name: $service_name"
   # echo "service_command: $service_command"
   # echo "service_schedule: $service_schedule"
-  # echo "is_cron_force_recreate: $is_cron_force_recreate"
+  # echo "is_quiet: $is_quiet"
   # exit 0
 
   if [ "$service_name" = "" ]; then
