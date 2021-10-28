@@ -7,7 +7,7 @@ export CRON_SERVICE_CRONTAB_TMP=/tmp/cron.zmicro
 
 if [ ! -d "$CRON_SERVICE_ENABLED_DIR" ]; then
   sudo mkdir -p $CRON_SERVICE_ENABLED_DIR
-  sudo chown -r $(os:username) $CRON_SERVICE_ENABLED_DIR
+  sudo chown -r $(os::username) $CRON_SERVICE_ENABLED_DIR
 fi
 
 if [ ! -d "$CRON_SERVICE_LOG_DIR" ]; then
