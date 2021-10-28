@@ -354,7 +354,7 @@ cron_list() {
     local service_name=$(cron_parse_service_name $file_name)
 
     # ignore enabled dir
-    if [ "$service_name" != "enabled" ]; then
+    if [ "$service_name" = "enabled" ]; then
       return
     fi
 
