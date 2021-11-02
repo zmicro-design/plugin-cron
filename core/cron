@@ -202,6 +202,9 @@ cron_enable() {
       log::error "cron service($name) has been enabled before (2)"
       return
     fi
+
+    sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
   fi
   set -e
 
@@ -212,8 +215,10 @@ cron_enable() {
   sudo ln -s $service_path $service_enabled_path
 
   # add to crontab
-  sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
-  sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+  if [ ! -f "$CRON_SERVICE_CRONTAB_TMP" ]; then
+    touch $CRON_SERVICE_CRONTAB_TMP
+  fi
+
   echo "${schedule_pattern} $service_enabled_path >> $service_log_path 2>&1" >>$CRON_SERVICE_CRONTAB_TMP
   sudo crontab $CRON_SERVICE_CRONTAB_TMP
   sudo rm $CRON_SERVICE_CRONTAB_TMP
