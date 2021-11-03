@@ -101,6 +101,13 @@ cron_is_service_enabled() {
 }
 
 cron_has_service() {
+  # fix empty crontab list
+  sudo crontab -l >> /dev/null 2>&1
+  if [ "$?" != "0" ]; then
+    echo "false"
+    return
+  fi
+
   cron_is_service_exist $@
 }
 
