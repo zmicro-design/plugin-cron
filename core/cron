@@ -101,14 +101,21 @@ cron_is_service_enabled() {
 }
 
 cron_has_service() {
+  local name=$1
+
   # fix empty crontab list
   sudo crontab -l >> /dev/null 2>&1
   if [ "$?" != "0" ]; then
     echo "false"
+
+    # fix dead service
+    if [ "$(cron_is_service_exist $name)" = "true" ]; then
+      cron_remove $name
+    fi
     return
   fi
 
-  cron_is_service_exist $@
+  cron_is_service_exist $name
 }
 
 cron_logs() {
