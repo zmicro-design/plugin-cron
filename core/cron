@@ -262,20 +262,23 @@ cron_disable() {
     return
   fi
 
-  # remove crontab
-  sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
-  sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+  sudo crontab -l >> /dev/null 2>&1
+  if [ "$?" = "0" ]; then
+    # remove crontab
+    sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
 
-  # sed -i -e "s%.*${service_enabled_path}.*%%g" $CRON_SERVICE_CRONTAB_TMP
-  fs::remove_line_has_str $CRON_SERVICE_CRONTAB_TMP $service_enabled_path
+    # sed -i -e "s%.*${service_enabled_path}.*%%g" $CRON_SERVICE_CRONTAB_TMP
+    fs::remove_line_has_str $CRON_SERVICE_CRONTAB_TMP $service_enabled_path
 
-  # remove empty line
-  #   reference: https://stackoverflow.com/questions/10347653/awk-remove-blank-lines
-  # awk NF $CRON_SERVICE_CRONTAB_TMP >$CRON_SERVICE_CRONTAB_TMP
-  fs::remove_empty_line $CRON_SERVICE_CRONTAB_TMP
+    # remove empty line
+    #   reference: https://stackoverflow.com/questions/10347653/awk-remove-blank-lines
+    # awk NF $CRON_SERVICE_CRONTAB_TMP >$CRON_SERVICE_CRONTAB_TMP
+    fs::remove_empty_line $CRON_SERVICE_CRONTAB_TMP
 
-  sudo crontab $CRON_SERVICE_CRONTAB_TMP
-  sudo rm $CRON_SERVICE_CRONTAB_TMP
+    sudo crontab $CRON_SERVICE_CRONTAB_TMP
+    sudo rm $CRON_SERVICE_CRONTAB_TMP
+  fi
 
   sudo unlink $service_enabled_path >>/dev/null
 
