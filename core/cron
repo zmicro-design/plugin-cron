@@ -201,6 +201,9 @@ cron_enable() {
     exit 1
   fi
 
+  # disable before enable
+  cron_disable $name
+
   local service_enabled_path=$(cron_get_service_enabled_path $name)
   if [ -f "$service_enabled_path" ]; then
     log::error "cron service($name) has been enabled before"
