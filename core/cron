@@ -231,6 +231,8 @@ cron_enable() {
   # add to crontab
   if [ ! -f "$CRON_SERVICE_CRONTAB_TMP" ]; then
     touch $CRON_SERVICE_CRONTAB_TMP
+  else
+    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
   fi
 
   echo "${schedule_pattern} $service_enabled_path >> $service_log_path 2>&1" >>$CRON_SERVICE_CRONTAB_TMP
