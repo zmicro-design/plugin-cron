@@ -107,15 +107,15 @@ create() {
     fi
 
     if [ "$is_cron_force_recreate" = "true" ]; then
-      cron_remove $service_name
+      cron::remove $service_name
     fi
   else
     if [ "$(cron_is_service_exist $service_name)" = "true" ]; then
-      cron_remove $service_name
+      cron::remove $service_name
     fi
   fi
 
-  cron_create $service_name "$service_schedule" "$service_command"
+  cron::create $service_name "$service_schedule" "$service_command"
 }
 
 help() {

@@ -20,7 +20,7 @@ core() {
     exit 1
   fi
 
-  cron_remove $service_name
+  cron::remove $service_name
 }
 
 run() {

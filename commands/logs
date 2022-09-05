@@ -46,7 +46,7 @@ core() {
     exit 1
   fi
 
-  cron_logs $service_name $args
+  cron::logs $service_name $args
 }
 
 run() {

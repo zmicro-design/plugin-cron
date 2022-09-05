@@ -104,18 +104,18 @@ cron_has_service() {
   local name=$1
 
   # fix empty crontab list
-  sudo crontab -l >> /dev/null 2>&1
+  sudo crontab -l >>/dev/null 2>&1
   if [ "$?" != "0" ]; then
     echo "false"
 
     # fix dead service
     if [ "$(cron_is_service_exist $name)" = "true" ]; then
-      cron_remove $name
+      cron::remove $name
     fi
     return
   fi
 
-  cron_is_service_exist $name
+  cron::is_service_exist $name
 }
 
 cron_logs() {
@@ -202,7 +202,7 @@ cron_enable() {
   fi
 
   # disable before enable
-  cron_disable $name
+  cron::disable $name
 
   local service_enabled_path=$(cron_get_service_enabled_path $name)
   if [ -f "$service_enabled_path" ]; then
@@ -267,7 +267,7 @@ cron_disable() {
     return
   fi
 
-  sudo crontab -l >> /dev/null 2>&1
+  sudo crontab -l >>/dev/null 2>&1
   if [ "$?" = "0" ]; then
     # remove crontab
     sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
@@ -340,7 +340,7 @@ EOF
 
   # auto enable
   # echo "cron_enable $name $schedule"
-  cron_enable $name $schedule
+  cron::enable $name $schedule
 
   log::success "cron service ${name} created"
 }
@@ -361,7 +361,7 @@ cron_remove() {
   fi
 
   # disable before move
-  cron_disable $service_name
+  cron::disable $service_name
 
   sudo rm $service_path
 
@@ -402,22 +402,22 @@ cron_count() {
   array::length $services
 }
 
-export -f cron_get_service_name
-export -f cron_parse_service_name
-export -f cron_service::get_path
-export -f cron_get_service_enabled_path
-export -f cron_get_service_log_path
-export -f cron_is_service_exist
-export -f cron_is_service_enabled
-export -f cron_has_service
+export -f cron::get_service_name
+export -f cron::parse_service_name
+export -f cron::service::get_path
+export -f cron::get_service_enabled_path
+export -f cron::get_service_log_path
+export -f cron::is_service_exist
+export -f cron::is_service_enabled
+export -f cron::has_service
 
-export -f cron_logs
-export -f cron_status
-export -f cron_enable
-export -f cron_disable
+export -f cron::logs
+export -f cron::status
+export -f cron::enable
+export -f cron::disable
 
-export -f cron_create
-export -f cron_remove
+export -f cron::create
+export -f cron::remove
 
-export -f cron_list
-export -f cron_count
+export -f cron::list
+export -f cron::count

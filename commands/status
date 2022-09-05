@@ -23,7 +23,7 @@ core() {
     exit 1
   fi
 
-  cron_status $service_name
+  cron::status $service_name
 }
 
 run() {

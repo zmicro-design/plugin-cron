@@ -29,14 +29,14 @@ core() {
     exit 1
   fi
 
-   if [ -z "$service_schedule" ]; then
+  if [ -z "$service_schedule" ]; then
     log::error "service schedule is required, use --help to get help"
     exit 1
   fi
 
-  # cron_enable $@
+  # cron::enable $@
   # echo "fuck: $service_name $service_schedule"
-  cron_enable $service_name "$service_schedule"
+  cron::enable $service_name "$service_schedule"
 }
 
 run() {

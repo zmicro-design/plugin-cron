@@ -23,7 +23,7 @@ core() {
     exit 1
   fi
 
-  cron_disable $@
+  cron::disable $@
 }
 
 run() {
