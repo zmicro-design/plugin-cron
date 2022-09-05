@@ -95,7 +95,7 @@ create() {
     fi
 
     if [ "$is_cron_force_recreate" = "false" ]; then
-      if [ "$(cron_has_service $service_name)" = "true" ]; then
+      if [ "$(cron::has_service $service_name)" = "true" ]; then
         local yesno=('Yes' 'No')
         inquirer::select "override ?" yesno answer
         if [ "$answer" != "Yes" ]; then
@@ -110,7 +110,7 @@ create() {
       cron::remove $service_name
     fi
   else
-    if [ "$(cron_is_service_exist $service_name)" = "true" ]; then
+    if [ "$(cron::is_service_exist $service_name)" = "true" ]; then
       cron::remove $service_name
     fi
   fi

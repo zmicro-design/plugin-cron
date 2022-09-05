@@ -22,7 +22,7 @@ core() {
     is_list_all=true
   fi
 
-  local services=$(cron_list $is_list_all)
+  local services=$(cron::list $is_list_all)
 
   print() {
     local index=$1
@@ -31,7 +31,7 @@ core() {
     log "    $index $(color::success "$service_name")"
   }
 
-  local services_count=$(cron_count $is_list_all)
+  local services_count=$(cron::count $is_list_all)
 
   if [ "$is_list_all" = "true" ]; then
     if [ $services_count -eq 0 ]; then
