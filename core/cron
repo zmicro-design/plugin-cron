@@ -1,27 +1,5 @@
 #!/bin/bash
 
-export CRON_SERVICE_DIR=$ZMICRO_HOME/plugins/cron/.run
-export CRON_SERVICE_ENABLED_DIR=$CRON_SERVICE_DIR/enabled
-export CRON_SERVICE_LOG_DIR=/var/log/zmicro/cron
-export CRON_SERVICE_CRONTAB_TMP=/tmp/cron.zmicro
-
-if [ ! -d "$CRON_SERVICE_ENABLED_DIR" ]; then
-  sudo mkdir -p $CRON_SERVICE_ENABLED_DIR
-  sudo chown -R $(os::username) $CRON_SERVICE_ENABLED_DIR
-fi
-
-if [ ! -r "$CRON_SERVICE_ENABLED_DIR" ]; then
-  sudo chown -R $(os::username) $CRON_SERVICE_ENABLED_DIR
-fi
-
-if [ ! -d "$CRON_SERVICE_LOG_DIR" ]; then
-  sudo mkdir -p $CRON_SERVICE_LOG_DIR
-fi
-
-if [ ! -w "$CRON_SERVICE_LOG_DIR" ]; then
-  sudo chown -R $USER $CRON_SERVICE_LOG_DIR
-fi
-
 cron::get_service_name() {
   local name=$1
   echo $name
@@ -45,7 +23,7 @@ cron::get_service_path() {
   fi
 
   local service=$(cron::get_service_name $1)
-  echo "$CRON_SERVICE_DIR/${service}"
+  echo "$PLUGIN_CRON_SERVICE_DIR/${service}"
 }
 
 cron::get_service_enabled_path() {
@@ -56,7 +34,7 @@ cron::get_service_enabled_path() {
   fi
 
   local service=$(cron::get_service_name $1)
-  echo "$CRON_SERVICE_ENABLED_DIR/${service}"
+  echo "$PLUGIN_CRON_SERVICE_ENABLED_DIR/${service}"
 }
 
 cron::get_service_log_path() {
@@ -67,7 +45,7 @@ cron::get_service_log_path() {
   fi
 
   local service=$(cron::get_service_name $1)
-  echo "$CRON_SERVICE_LOG_DIR/${service}"
+  echo "$PLUGIN_CRON_SERVICE_LOG_DIR/${service}"
 }
 
 cron::is_service_exist() {
@@ -92,7 +70,7 @@ cron::is_service_enabled() {
     exit 1
   fi
 
-  local service_enabled_path="$CRON_SERVICE_ENABLED_DIR/$name"
+  local service_enabled_path="$PLUGIN_CRON_SERVICE_ENABLED_DIR/$name"
   if [ ! -f $service_enabled_path ]; then
     echo "false"
   else
@@ -220,8 +198,8 @@ cron::enable() {
       return
     fi
 
-    sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
-    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+    sudo crontab -l >$PLUGIN_CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+    sudo chmod 664 $PLUGIN_CRON_SERVICE_CRONTAB_TMP
   fi
   set -e
 
@@ -232,15 +210,15 @@ cron::enable() {
   sudo ln -s $service_path $service_enabled_path
 
   # add to crontab
-  if [ ! -f "$CRON_SERVICE_CRONTAB_TMP" ]; then
-    touch $CRON_SERVICE_CRONTAB_TMP
+  if [ ! -f "$PLUGIN_CRON_SERVICE_CRONTAB_TMP" ]; then
+    touch $PLUGIN_CRON_SERVICE_CRONTAB_TMP
   else
-    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+    sudo chmod 664 $PLUGIN_CRON_SERVICE_CRONTAB_TMP
   fi
 
-  echo "${schedule_pattern} $service_enabled_path >> $service_log_path 2>&1" >>$CRON_SERVICE_CRONTAB_TMP
-  sudo crontab $CRON_SERVICE_CRONTAB_TMP
-  sudo rm $CRON_SERVICE_CRONTAB_TMP
+  echo "${schedule_pattern} $service_enabled_path >> $service_log_path 2>&1" >>$PLUGIN_CRON_SERVICE_CRONTAB_TMP
+  sudo crontab $PLUGIN_CRON_SERVICE_CRONTAB_TMP
+  sudo rm $PLUGIN_CRON_SERVICE_CRONTAB_TMP
 
   echo "[enabled][$USER] $(date)" >>$service_log_path
 
@@ -270,19 +248,19 @@ cron::disable() {
   sudo crontab -l >>/dev/null 2>&1
   if [ "$?" = "0" ]; then
     # remove crontab
-    sudo crontab -l >$CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
-    sudo chmod 664 $CRON_SERVICE_CRONTAB_TMP
+    sudo crontab -l >$PLUGIN_CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
+    sudo chmod 664 $PLUGIN_CRON_SERVICE_CRONTAB_TMP
 
-    # sed -i -e "s%.*${service_enabled_path}.*%%g" $CRON_SERVICE_CRONTAB_TMP
-    fs::remove_line_has_str $CRON_SERVICE_CRONTAB_TMP $service_enabled_path
+    # sed -i -e "s%.*${service_enabled_path}.*%%g" $PLUGIN_CRON_SERVICE_CRONTAB_TMP
+    fs::remove_line_has_str $PLUGIN_CRON_SERVICE_CRONTAB_TMP $service_enabled_path
 
     # remove empty line
     #   reference: https://stackoverflow.com/questions/10347653/awk-remove-blank-lines
-    # awk NF $CRON_SERVICE_CRONTAB_TMP >$CRON_SERVICE_CRONTAB_TMP
-    fs::remove_empty_line $CRON_SERVICE_CRONTAB_TMP
+    # awk NF $PLUGIN_CRON_SERVICE_CRONTAB_TMP >$PLUGIN_CRON_SERVICE_CRONTAB_TMP
+    fs::remove_empty_line $PLUGIN_CRON_SERVICE_CRONTAB_TMP
 
-    sudo crontab $CRON_SERVICE_CRONTAB_TMP
-    sudo rm $CRON_SERVICE_CRONTAB_TMP
+    sudo crontab $PLUGIN_CRON_SERVICE_CRONTAB_TMP
+    sudo rm $PLUGIN_CRON_SERVICE_CRONTAB_TMP
   fi
 
   sudo unlink $service_enabled_path >>/dev/null
@@ -315,8 +293,8 @@ cron::create() {
   fi
 
   # create script dir
-  if [ ! -d $CRON_SERVICE_ENABLED_DIR ]; then
-    sudo mkdir -p $CRON_SERVICE_ENABLED_DIR
+  if [ ! -d $PLUGIN_CRON_SERVICE_ENABLED_DIR ]; then
+    sudo mkdir -p $PLUGIN_CRON_SERVICE_ENABLED_DIR
   fi
 
   if [ "$(cron::is_service_exist $name)" = "true" ]; then
@@ -375,9 +353,9 @@ cron::list() {
 
   local service_files=""
   if [ "$is_list_all" = "true" ]; then
-    service_files=$(ls $CRON_SERVICE_DIR)
+    service_files=$(ls $PLUGIN_CRON_SERVICE_DIR)
   else
-    service_files=$(ls $CRON_SERVICE_ENABLED_DIR)
+    service_files=$(ls $PLUGIN_CRON_SERVICE_ENABLED_DIR)
   fi
 
   parser() {

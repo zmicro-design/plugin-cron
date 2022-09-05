@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# export PLUGIN_CRON_SERVICE_DIR=$ZMICRO_HOME/plugins/cron/.run
+# export PLUGIN_CRON_SERVICE_ENABLED_DIR=$PLUGIN_CRON_SERVICE_DIR/enabled
+# export PLUGIN_CRON_SERVICE_LOG_DIR=/var/log/zmicro/cron
+# export PLUGIN_CRON_SERVICE_CRONTAB_TMP=/tmp/cron.zmicro
+
+export PLUGIN_CRON_SERVICE_DIR=$PLUGIN_DATA/.run
+export PLUGIN_CRON_SERVICE_ENABLED_DIR=$PLUGIN_CRON_SERVICE_DIR/enabled
+export PLUGIN_CRON_SERVICE_LOG_DIR=$PLUGIN_LOGS
+export PLUGIN_CRON_SERVICE_CRONTAB_TMP=/tmp/cron.zmicro
+
+if [ ! -d "$PLUGIN_CRON_SERVICE_ENABLED_DIR" ]; then
+  sudo mkdir -p $PLUGIN_CRON_SERVICE_ENABLED_DIR
+  sudo chown -R $(os::username) $PLUGIN_CRON_SERVICE_ENABLED_DIR
+fi
+
+if [ ! -r "$PLUGIN_CRON_SERVICE_ENABLED_DIR" ]; then
+  sudo chown -R $(os::username) $PLUGIN_CRON_SERVICE_ENABLED_DIR
+fi
+
+if [ ! -d "$PLUGIN_CRON_SERVICE_LOG_DIR" ]; then
+  sudo mkdir -p $PLUGIN_CRON_SERVICE_LOG_DIR
+fi
+
+if [ ! -w "$PLUGIN_CRON_SERVICE_LOG_DIR" ]; then
+  sudo chown -R $USER $PLUGIN_CRON_SERVICE_LOG_DIR
+fi
