@@ -17,13 +17,14 @@ core() {
   fi
 
   local service_name=$1
+  local service_schedule=${@:2}
 
   if [ -z "$service_name" ]; then
     log::error "service name is required, use --help to get help"
     exit 1
   fi
 
-  cron::status $service_name
+  cron::status "$service_name" "$service_schedule"
 }
 
 run() {

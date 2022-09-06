@@ -138,6 +138,7 @@ cron::logs() {
 
 cron::status() {
   local name=$1
+  local schedule=$2
   if [ "$name" = "" ]; then
     log::error "name is required"
     exit 1
@@ -150,6 +151,10 @@ cron::status() {
   fi
 
   if [ "$(cron::is_service_enabled $name)" = "true" ]; then
+    if [ -n "$schedule" ]; then
+      cron::enable $name $schedule >>/dev/null 2>&1
+    fi
+
     echo "running"
   else
     echo "none"
@@ -251,7 +256,6 @@ cron::disable() {
     sudo crontab -l >$PLUGIN_CRON_SERVICE_CRONTAB_TMP 2>>/dev/null
     sudo chmod 664 $PLUGIN_CRON_SERVICE_CRONTAB_TMP
 
-    # sed -i -e "s%.*${service_enabled_path}.*%%g" $PLUGIN_CRON_SERVICE_CRONTAB_TMP
     fs::remove_line_has_str $PLUGIN_CRON_SERVICE_CRONTAB_TMP $service_enabled_path
 
     # remove empty line
