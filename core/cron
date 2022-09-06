@@ -151,6 +151,7 @@ cron::status() {
   fi
 
   if [ "$(cron::is_service_enabled $name)" = "true" ]; then
+    # try to fix dead service, maybe remove crontab manually by someone
     if [ -n "$schedule" ]; then
       cron::enable $name $schedule >>/dev/null 2>&1
     fi
