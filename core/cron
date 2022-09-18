@@ -315,7 +315,8 @@ cron::create() {
   # create script
   sudo tee $service_path >>/dev/null <<EOF
 #!/bin/bash
-export PATH=/usr/local/lib/zmicro/bin:\$PATH
+export PATH=/usr/local/lib/zmicro/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:\$PATH
+
 
 ${command}
 EOF
