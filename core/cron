@@ -225,6 +225,9 @@ cron::enable() {
   sudo crontab $PLUGIN_CRON_SERVICE_CRONTAB_TMP
   sudo rm $PLUGIN_CRON_SERVICE_CRONTAB_TMP
 
+  if [ -f "$service_log_path" ] && [ ! -w "$service_log_path" ]; then
+    sudo chmod 777 $service_log_path
+  fi
   echo "[enabled][$USER] $(date)" >>$service_log_path
 
   log::success "[cron::enable] cron service($name) enabled"
@@ -269,6 +272,9 @@ cron::disable() {
 
   sudo unlink $service_enabled_path >>/dev/null
 
+  if [ -f "$service_log_path" ] && [ ! -w "$service_log_path" ]; then
+    sudo chmod 777 $service_log_path
+  fi
   echo "[disabled][$USER] $(date)" >>$service_log_path
 }
 
@@ -320,7 +326,6 @@ cron::create() {
   sudo tee $service_path >>/dev/null <<EOF
 #!/bin/bash
 export PATH=/usr/local/lib/zmicro/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin:\$PATH
-
 
 ${command}
 EOF
