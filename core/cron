@@ -186,12 +186,12 @@ cron::enable() {
   fi
 
   # disable before enable
-  cron::disable $name
+  # cron::disable $name
 
+  local service_path=$(cron::get_service_path $name)
   local service_enabled_path=$(cron::get_service_enabled_path $name)
-  if [ -f "$service_enabled_path" ]; then
-    log::error "cron service($name) has been enabled before"
-    return
+  if [ ! -L "$service_enabled_path" ]; then
+    sudo ln -s $service_path $service_enabled_path
   fi
 
   # @TODO why set +e
@@ -200,7 +200,7 @@ cron::enable() {
   if [ "$?" = "0" ]; then
     sudo crontab -l | grep $service_enabled_path >>/dev/null 2>&1
     if [ "$?" = "0" ]; then
-      log::error "cron service($name) has been enabled before (2)"
+      # log::error "cron service($name) has been enabled before (2)"
       return
     fi
 
@@ -209,11 +209,10 @@ cron::enable() {
   fi
   set -e
 
-  local service_path=$(cron::get_service_path $name)
   local service_log_path=$(cron::get_service_log_path $name)
 
   # link to enable
-  sudo ln -s $service_path $service_enabled_path
+  # sudo ln -s $service_path $service_enabled_path
 
   # add to crontab
   if [ ! -f "$PLUGIN_CRON_SERVICE_CRONTAB_TMP" ]; then
@@ -303,9 +302,14 @@ cron::create() {
   fi
 
   if [ "$(cron::is_service_exist $name)" = "true" ]; then
-    local service_path=$(cron::get_service_path $name)
-    log::error "found cron service(${name}), please it manual: ${service_path}"
-    exit 1
+    # local service_path=$(cron::get_service_path $name)
+    # log::error "found cron service(${name}), please it manual: ${service_path}"
+    # exit 1
+
+    if [ "$(cron::is_service_enabled $name)" != "true" ]; then
+      cron::enable $name $schedule
+      return 0
+    fi
   fi
 
   local service_name=$(cron::get_service_name $name)
