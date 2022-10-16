@@ -1,6 +1,13 @@
 #!/bin/bash
 
-which crontab >> /dev/null 2>&1
+which crontab >>/dev/null 2>&1
 if [ "$?" != "0" ]; then
+  # fedora
+  which dnf >>/dev/null 2>&1
+  if [ "$?" = "0" ]; then
+    sudo dnf install -y cronie cronie-anacron
+    exit 0
+  fi
+
   pm update && pm install -yqq cron
 fi
